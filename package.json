@@ -27,6 +27,8 @@
   "dependencies": {
     "@mapbox/tile-cover": "^3.0.2",
     "@turf/turf": "^5.1.6",
-    "bluebird": "^3.5.1"
+    "bluebird": "^3.5.1",
+    "concurrent-queue": "^7.0.2",
+    "request-promise": "^4.2.2"
   }
 }

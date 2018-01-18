@@ -7,6 +7,9 @@ const defaultOpts = {
   buffer: '10km',
   zoom: '7-16',
   list: false,
+  method: 'GET',
+  headers: {},
+  concurrency: 1,
 };
 
 function getOpts(argv) {
@@ -66,7 +69,11 @@ function validateAndTransformOpts(opts) {
     throwArgumentError('When --point is set, --buffer must also be set');
   }
 
-  return opts;
+  return _.merge({}, opts, {
+    buffer: parseBuffer(opts.buffer),
+    zoom: parseZoomRange(opts.zoom),
+    point: parsePoint(opts.point),
+  });
 }
 
 function assertNumber(val, message) {
@@ -82,7 +89,36 @@ function throwArgumentError(message) {
   throw err;
 }
 
+function parsePoint(point) {
+  const arr = String(point).split(',');
+  const nums = _.map(arr, i => parseFloat(i));
+  return {
+    lat: nums[0],
+    lng: nums[1],
+  };
+}
+
+function parseBuffer(buffer) {
+  const radius = parseFloat(buffer);
+  const unit = /mi$/.test(buffer) ? 'miles' : 'kilometers';
+  return {
+    radius,
+    unit,
+  };
+}
+
+function parseZoomRange(zoom) {
+  if (zoom.indexOf('-') > -1) {
+    const parts = zoom.split('-');
+    const min = Number(parts[0]);
+    const max = Number(parts[1]);
+    return _.range(min, max + 1);
+  }
+
+  const nums = _.map(zoom.split(','), s => Number(s));
+  return _.sortBy(nums);
+}
+
 module.exports = {
-  defaultOpts: defaultOpts,
   getOpts: getOpts
 };

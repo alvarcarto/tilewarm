@@ -2,18 +2,33 @@
 
 const BPromise = require('bluebird');
 const _ = require('lodash');
+const request = require('request-promise');
 const path = require('path');
+const cq = require('concurrent-queue')
 const cliParser = require('./cli-parser');
 const { createTiles } = require('./tile');
 
-function main(_opts) {
-  const opts = _.extend({}, cliParser.defaultOpts, _opts);
+function main(opts) {
+  const tileUrls = createTiles(opts);
 
-  const tiles = createTiles(opts);
-  console.log(tiles);
-  return BPromise.resolve();
+  // Request the urls in order with the given concurrency limit. I.e.
+  // n workers consuming a FIFO queue, doing requests as fast as they can
+  const queueOpts = { concurrency: opts.concurrency };
+  const queue = cq().limit(queueOpts).process((url) => {
+    console.log(`${opts.method} ${url}`);
+    return request({
+      url,
+      method: opts.method,
+      headers: opts.headers,
+    })
+      .then(() => true)
+      .catch(err => err);
+  })
+
+  const promises = [];
+  _.forEach(tileUrls, url => queue(url));
+  return BPromise.all(promises);
 }
-
 
 if (require.main === module) {
   let opts;
