@@ -3,7 +3,7 @@
 A command-line tool to warm up your tile server cache. Give it a URL template, coordinates, and list of zoom levels and it will systematically request all tile images in the given area.
 
 ```bash
-npm i -g tilewarm
+npm install -g @alvarcarto/tilewarm
 ```
 
 
@@ -55,16 +55,20 @@ Usage:  <url> [options]
 
 
 Options:
-  -h, --help     Show help                                             [boolean]
-  -p, --point    Center of region (use with -b)                         [string]
-  -b, --buffer   Buffer point/geometry by an amount. Affix units at end: mi,km
-                                                       [string] [default: "0km"]
-  -z, --zoom     Zoom levels (comma separated or range)
-                                                      [string] [default: "3-11"]
-  -l, --list     Don't perform any requests, just list all tile URLs
+  --verbose          Increase logging                 [boolean] [default: false]
+  -h, --help         Show help                                         [boolean]
+  -p, --point        Center of region (use with -b)                     [string]
+  -b, --buffer       Buffer point/geometry by an amount. Affix units at end:
+                     mi,km                             [string] [default: "0km"]
+  -z, --zoom         Zoom levels (comma separated or range)
+                                                       [string] [default: "3-9"]
+  -l, --list         Don't perform any requests, just list all tile URLs
                                                       [boolean] [default: false]
-  -i, --input    GeoJSON input file                     [string] [default: null]
-  -v, --version  Show version number                                   [boolean]
+  -i, --input        GeoJSON input file                 [string] [default: null]
+  -c, --concurrency  How  many concurrent requests to execute       [default: 5]
+  -m, --method       Which HTTP method to use in requests
+                                                       [string] [default: "GET"]
+  -v, --version      Show version number                               [boolean]
 
 Examples:
   tilewarm http://tileserver.com/{z}/{x}/{y}.png --point 62.31,23.12 --buffer 10km

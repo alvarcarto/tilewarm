@@ -1,5 +1,5 @@
 {
-  "name": "tilewarm",
+  "name": "@alvarcarto/tilewarm",
   "version": "0.2.0",
   "description": "A command-line tool to warm up your tile server cache",
   "main": "src/index.js",
