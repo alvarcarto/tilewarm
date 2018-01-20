@@ -1,15 +1,17 @@
 const _ = require('lodash');
 const yargs = require('yargs');
+const fs = require('fs');
 
 const VERSION = require('../package.json').version;
 
 const defaultOpts = {
-  buffer: '10km',
-  zoom: '7-16',
+  buffer: '0km',
+  zoom: '3-9',
   list: false,
+  input: null,
   method: 'GET',
   headers: {},
-  concurrency: 1,
+  concurrency: 5,
 };
 
 function getOpts(argv) {
@@ -24,7 +26,7 @@ function getUserOpts() {
       'Usage: $0 <url> [options]\n\n' +
       '<url>   Tile URL template\n'
     )
-    .example('$0 http://tileserver.com/{z}/{x}/{y}.png')
+    .example('tilewarm http://tileserver.com/{z}/{x}/{y}.png --point 62.31,23.12 --buffer 10km')
     .demand(1)
     .option('point', {
       describe: 'Center of region (use with -b)',
@@ -54,6 +56,13 @@ function getUserOpts() {
     })
     .alias('l', 'list')
 
+    .option('input', {
+      describe: 'GeoJSON input file',
+      default: defaultOpts.input,
+      type: 'string'
+    })
+    .alias('i', 'input')
+
     .help('h')
     .alias('h', 'help')
     .alias('v', 'version')
@@ -69,10 +78,14 @@ function validateAndTransformOpts(opts) {
     throwArgumentError('When --point is set, --buffer must also be set');
   }
 
+  if (!/^((\d+\-\d+)|(\d+(,\d+)*))$/.test(opts.zoom)) throwArgumentError('Invalid "zoom" argument');
+  assertTemplateUrl(opts.url);
+
   return _.merge({}, opts, {
     buffer: parseBuffer(opts.buffer),
     zoom: parseZoomRange(opts.zoom),
     point: parsePoint(opts.point),
+    input: parseInput(opts.input),
   });
 }
 
@@ -118,6 +131,37 @@ function parseZoomRange(zoom) {
   const nums = _.map(zoom.split(','), s => Number(s));
   return _.sortBy(nums);
 }
+
+function parseInput(input) {
+  if (!input) {
+    return null;
+  }
+
+  const content = fs.readFileSync(input, { encoding: 'utf8'});
+  let obj;
+  try {
+    obj = JSON.parse(content);
+  } catch (e) {
+    throwArgumentError('Invalid JSON');
+  }
+  return obj;
+}
+
+function assertTemplateUrl(template) {
+  if (!/^https?\:/.test(template)) {
+    throwArgumentError('Invalid url');
+  }
+
+  assertTemplateUrlParameter(template, '{x}');
+  assertTemplateUrlParameter(template, '{y}');
+  assertTemplateUrlParameter(template, '{z}');
+}
+
+function assertTemplateUrlParameter(template, param) {
+  if (template.indexOf(param) === -1) {
+    throwArgumentError(`Template url is missing parameter: ${param}`);
+  }
+};
 
 module.exports = {
   getOpts: getOpts

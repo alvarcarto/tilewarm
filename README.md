@@ -18,7 +18,46 @@ tilewarm http://tile.osm.org/{z}/{x}/{y}.png --point 1,1 --buffer 10km
 ## Usage
 
 ```
-TODO
+Usage:  <url> [options]
+
+<url>   Tile URL template
+
+
+Options:
+  -h, --help     Show help                                             [boolean]
+  -p, --point    Center of region (use with -b)                         [string]
+  -b, --buffer   Buffer point/geometry by an amount. Affix units at end: mi,km
+                                                       [string] [default: "0km"]
+  -z, --zoom     Zoom levels (comma separated or range)
+                                                      [string] [default: "3-11"]
+  -l, --list     Don't perform any requests, just list all tile URLs
+                                                      [boolean] [default: false]
+  -i, --input    GeoJSON input file                     [string] [default: null]
+  -v, --version  Show version number                                   [boolean]
+
+Examples:
+  tilewarm http://tileserver.com/{z}/{x}/{y}.png --point 62.31,23.12 --buffer 10km
+```
+
+### Warming cache for all cities in the world
+
+Form a geojson for all cities in the world.
+
+```bash
+node tools/cities-to-geojson.js tools/cities.csv > cities.geojson
+
+# Put geojson to clipboard, works on Mac
+cat cities.geojson | pbcopy
+```
+
+You can debug the geojson by pasting it into http://geojson.io/. The file can
+be compressed even more with https://www.npmjs.com/package/geojson-precision.
+
+
+Then run:
+
+```
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input cities.geojson
 ```
 
 

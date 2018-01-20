@@ -6,27 +6,37 @@ const request = require('request-promise');
 const path = require('path');
 const cq = require('concurrent-queue')
 const cliParser = require('./cli-parser');
-const { createTiles } = require('./tile');
+const { createTiles, buildUrl } = require('./tile');
 
 function main(opts) {
-  const tileUrls = createTiles(opts);
+  const tiles = createTiles(opts);
 
   // Request the urls in order with the given concurrency limit. I.e.
   // n workers consuming a FIFO queue, doing requests as fast as they can
   const queueOpts = { concurrency: opts.concurrency };
-  const queue = cq().limit(queueOpts).process((url) => {
-    console.log(`${opts.method} ${url}`);
+  const queue = cq().limit(queueOpts).process((xyz) => {
+    const tileUrl = buildUrl(opts.url, xyz);
+
+    if (opts.list) {
+      console.log(tileUrl);
+      return BPromise.resolve(true);
+    }
+
+    console.log(`${opts.method} ${tileUrl}`);
     return request({
-      url,
+      url: tileUrl,
       method: opts.method,
       headers: opts.headers,
     })
       .then(() => true)
-      .catch(err => err);
+      .catch(err => {
+        console.error(err.message);
+        return err;
+      });
   })
 
   const promises = [];
-  _.forEach(tileUrls, url => queue(url));
+  _.forEach(tiles, xyz => queue(xyz));
   return BPromise.all(promises);
 }
 
