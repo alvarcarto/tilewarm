@@ -1,5 +1,5 @@
 {
-  "name": "@alvarcarto/tilewarm",
+  "name": "tilewarm",
   "version": "0.2.0",
   "description": "A command-line tool to warm up your tile server cache",
   "main": "src/index.js",
@@ -27,7 +27,6 @@
   "dependencies": {
     "@mapbox/tile-cover": "^3.0.2",
     "@turf/turf": "^5.1.6",
-    "abaculus": "^2.0.3",
     "bluebird": "^3.5.1",
     "concurrent-queue": "^7.0.2",
     "lodash": "^4.17.4",
