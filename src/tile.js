@@ -6,10 +6,14 @@ function createTiles(opts) {
   const geometries = [];
   if (opts.input) {
     const geojson = opts.input;
-    if (geojson.type === 'Feature') {
-      geometries.push(geojson.geometry);
-    } else {
+    if (geojson.type === 'FeatureCollection') {
       _.forEach(geojson.features, i => geometries.push(i.geometry));
+    } else if (geojson.type === 'Feature') {
+      geometries.push(geojson.geometry);
+    } else if (geojson.type === 'Polygon') {
+      geometries.push(geojson);
+    } else {
+      throw new Error(`Unsupported GeoJSON type at top level: ${geojson.type}`);
     }
   } else {
     const point = turf.point([opts.point.lng, opts.point.lat]);

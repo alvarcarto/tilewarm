@@ -35,6 +35,9 @@ function main(opts) {
       });
   })
 
+  if (tiles.length === 0) {
+    console.log('No area to cover');
+  }
   const promises = [];
   _.forEach(tiles, xyz => queue(xyz));
   return BPromise.all(promises);
