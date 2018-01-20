@@ -70,6 +70,20 @@ function getUserOpts() {
       type: 'boolean'
     })
 
+    .option('concurrency', {
+      describe: 'How  many concurrent requests to execute',
+      default: defaultOpts.concurrency,
+      type: 'integer'
+    })
+    .alias('c', 'concurrency')
+
+    .option('method', {
+      describe: 'Which HTTP method to use in requests',
+      default: defaultOpts.method,
+      type: 'string'
+    })
+    .alias('m', 'method')
+
     .help('h')
     .alias('h', 'help')
     .alias('v', 'version')
@@ -85,6 +99,7 @@ function validateAndTransformOpts(opts) {
     throwArgumentError('When --point is set, --buffer must also be set');
   }
 
+  if (!/^\d+$/.test(opts.concurrency)) throwArgumentError('Invalid "concurrency" argument');
   if (!/^((\d+\-\d+)|(\d+(,\d+)*))$/.test(opts.zoom)) throwArgumentError('Invalid "zoom" argument');
   assertTemplateUrl(opts.url);
 
