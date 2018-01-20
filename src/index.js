@@ -10,6 +10,7 @@ const { createTiles, buildUrl } = require('./tile');
 
 function main(opts) {
   const tiles = createTiles(opts);
+  if (opts.verbose) console.log(`${tiles.length} tile urls total`);
 
   // Request the urls in order with the given concurrency limit. I.e.
   // n workers consuming a FIFO queue, doing requests as fast as they can

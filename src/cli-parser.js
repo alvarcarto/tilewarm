@@ -12,6 +12,7 @@ const defaultOpts = {
   method: 'GET',
   headers: {},
   concurrency: 5,
+  verbose: false,
 };
 
 function getOpts(argv) {
@@ -62,6 +63,12 @@ function getUserOpts() {
       type: 'string'
     })
     .alias('i', 'input')
+
+    .option('verbose', {
+      describe: 'Increase logging',
+      default: defaultOpts.verbose,
+      type: 'boolean'
+    })
 
     .help('h')
     .alias('h', 'help')

@@ -27,12 +27,15 @@
   "dependencies": {
     "@mapbox/tile-cover": "^3.0.2",
     "@turf/turf": "^5.1.6",
+    "abaculus": "^2.0.3",
     "bluebird": "^3.5.1",
     "concurrent-queue": "^7.0.2",
     "lodash": "^4.17.4",
     "request-promise": "^4.2.2"
   },
   "devDependencies": {
-    "csv": "^2.0.0"
+    "@mapbox/abaculus": "^2.1.0",
+    "csv": "^2.0.0",
+    "jimp": "^0.2.28"
   }
 }

@@ -9,11 +9,42 @@ npm i -g tilewarm
 
 ## Examples
 
-**Basic example:**
+**1-5 levels, 20km radius from the center of Barcelona**
 
 ```bash
-tilewarm http://tile.osm.org/{z}/{x}/{y}.png --point 1,1 --buffer 10km
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --point 41.38,2.16 --buffer 20km --zoom 1-5
 ```
+
+**1-5 levels of the world (~1.3k requests)**
+
+```bash
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/world.geojson --zoom 1-5
+```
+
+**1,3,5 levels of the world (~1k requests)**
+
+```bash
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/world.geojson --zoom 1,3,5
+```
+
+**6-8 levels for all cities in the world (~4k requests)**
+
+```bash
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.geojson --zoom 6-8
+```
+
+**6-14 levels for all cities in the world (~1.2M requests)**
+
+```bash
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.geojson --zoom 6-4
+```
+
+**15 level for all cities in the world (~3M requests)**
+
+```bash
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.geojson --zoom 15
+```
+
 
 ## Usage
 
@@ -59,6 +90,13 @@ Then run:
 ```
 tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input cities.geojson
 ```
+
+
+## Zoom levels visually
+
+Each zoom level 3-19.
+
+![](docs/zoomlevels.gif)
 
 
 # Contributors
