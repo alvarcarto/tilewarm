@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-
+// First install: npm i @mapbox/abaculus
+// It was removed from devDependencies because node-mapnik is very slow to install
+//
 // node create-zoom-level-images.js
 // convert -limit thread 10 -delay 60 -resize 600x600 -layers optimize *.png levels.gif
 
