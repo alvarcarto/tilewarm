@@ -30,6 +30,7 @@
     "bluebird": "^3.5.1",
     "concurrent-queue": "^7.0.2",
     "lodash": "^4.17.4",
+    "request": "^2.83.0",
     "request-promise": "^4.2.2"
   },
   "devDependencies": {
