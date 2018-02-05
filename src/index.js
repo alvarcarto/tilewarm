@@ -38,7 +38,7 @@ function main(opts) {
         }
       })
       .catch(err => {
-        console.error(err.message);
+        console.error(`Error requesting ${tileUrl}: "${err.message}"`);
         return err;
       });
   })
