@@ -23,13 +23,20 @@ function main(opts) {
       return BPromise.resolve(true);
     }
 
-    console.log(`${opts.method} ${tileUrl}`);
     return request({
       url: tileUrl,
       method: opts.method,
       headers: opts.headers,
+      simple: false,
+      resolveWithFullResponse: true,
     })
-      .then(() => true)
+      .then((res) => {
+        if (res.statusCode == 200) {
+          console.log(`${opts.method} ${tileUrl} ${res.statusCode}`);
+        } else {
+          console.log(`${opts.method} ${tileUrl} ${res.statusCode} "${res.body}"`);
+        }
+      })
       .catch(err => {
         console.error(err.message);
         return err;

@@ -88,6 +88,7 @@ function getImage(opts) {
       BPromise.resolve(request({
         url: tileUrl,
         encoding: null,
+        timeout: 20 * 60 * 1000
       }))
         .then(data => Buffer.from(data))
         .asCallback(callback);
