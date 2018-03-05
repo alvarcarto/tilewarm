@@ -31,7 +31,8 @@
     "concurrent-queue": "^7.0.2",
     "lodash": "^4.17.4",
     "request": "^2.83.0",
-    "request-promise": "^4.2.2"
+    "request-promise": "^4.2.2",
+    "yargs": "^11.0.0"
   },
   "devDependencies": {
     "csv": "^2.0.0",
