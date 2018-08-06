@@ -36,7 +36,7 @@ tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.ge
 **6-14 levels for all cities in the world (~1.2M requests)**
 
 ```bash
-tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.geojson --zoom 6-4
+tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.geojson --zoom 6-14
 ```
 
 **15 level for all cities in the world (~3M requests)**
