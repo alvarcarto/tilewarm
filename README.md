@@ -6,6 +6,11 @@ A command-line tool to warm up your tile server cache. Give it a URL template, c
 npm install -g @alvarcarto/tilewarm
 ```
 
+Docker example:
+```bash
+docker build -t tilewarm .
+docker run tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/world.geojson --zoom 1-5
+```
 
 ## Examples
 
