@@ -54,29 +54,37 @@ tilewarm http://yourtileserver.com/{z}/{x}/{y}.png --input geojson/all-cities.ge
 ## Usage
 
 ```
-Usage:  <url> [options]
+Usage: tilewarm <url> [options]
 
 <url>   Tile URL template
 
 
 Options:
-  --verbose          Increase logging                 [boolean] [default: false]
-  -h, --help         Show help                                         [boolean]
-  -p, --point        Center of region (use with -b)                     [string]
-  -b, --buffer       Buffer point/geometry by an amount. Affix units at end:
-                     mi,km                             [string] [default: "0km"]
-  -z, --zoom         Zoom levels (comma separated or range)
+  --verbose             Increase logging              [boolean] [default: false]
+  --max-retries         How many times to retry the tile request. The first
+                        request is not counted as a retry.          [default: 5]
+  --retry-base-timeout  Base timeout defines how many ms to wait before retrying
+                        a request. The final wait time is calculated with
+                        retryIndex * retryBaseTimeout.           [default: 5000]
+  -h, --help            Show help                                      [boolean]
+  -p, --point           Center of region (use with -b)                  [string]
+  -b, --buffer          Buffer point/geometry by an amount. Affix units at end:
+                        mi,km                          [string] [default: "0km"]
+  -z, --zoom            Zoom levels (comma separated or range)
                                                        [string] [default: "3-9"]
-  -l, --list         Don't perform any requests, just list all tile URLs
+  -l, --list            Don't perform any requests, just list all tile URLs
                                                       [boolean] [default: false]
-  -i, --input        GeoJSON input file                 [string] [default: null]
-  -c, --concurrency  How  many concurrent requests to execute       [default: 5]
-  -m, --method       Which HTTP method to use in requests
+  -i, --input           GeoJSON input file              [string] [default: null]
+  -c, --concurrency     How many concurrent requests to execute     [default: 5]
+  -m, --method          Which HTTP method to use in requests
                                                        [string] [default: "GET"]
-  -v, --version      Show version number                               [boolean]
+  -v, --version         Show version number                            [boolean]
 
 Examples:
-  tilewarm http://tileserver.com/{z}/{x}/{y}.png --point 62.31,23.12 --buffer 10km
+  tilewarm http://tileserver.com/{z}/{x}/{y}.png --point 62.31,23.12 --buffer
+  10km
+
+Not enough non-option arguments: got 0, need at least 1
 ```
 
 ### Warming cache for all cities in the world

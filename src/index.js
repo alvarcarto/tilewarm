@@ -3,14 +3,43 @@
 const BPromise = require('bluebird');
 const _ = require('lodash');
 const request = require('request-promise');
-const path = require('path');
+const promiseRetryify = require('promise-retryify');
 const cq = require('concurrent-queue')
 const cliParser = require('./cli-parser');
 const { createTiles, buildUrl } = require('./tile');
 
+function requestTile(tileUrl, opts) {
+  return request({
+    url: tileUrl,
+    method: opts.method,
+    headers: opts.headers,
+    resolveWithFullResponse: true,
+  })
+    .then((res) => {
+      console.log(`${opts.method} ${tileUrl} ${res.statusCode}`);
+    })
+    .catch((err) => {
+      if (err.name === 'StatusCodeError') {
+        const res = err.response;
+        console.log(`${opts.method} ${tileUrl} ${res.statusCode} "${res.body}"`);
+        throw err;
+      }
+
+      console.log(`${opts.method} ${tileUrl} XXX "${err.message}"`);
+      throw err;
+    });
+}
+
 function main(opts) {
+  console.error('Calculating tiles ..')
   const tiles = createTiles(opts);
   if (opts.verbose) console.log(`${tiles.length} tile urls total`);
+
+  const retryingRequestTile = promiseRetryify(requestTile, {
+    beforeRetry: retryCount => console.log(`Retrying tile request (${retryCount}) ..`),
+    retryTimeout: count => count * opts.retryBaseTimeout,
+    maxRetries: opts.maxRetries,
+  });
 
   // Request the urls in order with the given concurrency limit. I.e.
   // n workers consuming a FIFO queue, doing requests as fast as they can
@@ -23,22 +52,9 @@ function main(opts) {
       return BPromise.resolve(true);
     }
 
-    return request({
-      url: tileUrl,
-      method: opts.method,
-      headers: opts.headers,
-      simple: false,
-      resolveWithFullResponse: true,
-    })
-      .then((res) => {
-        if (res.statusCode == 200) {
-          console.log(`${opts.method} ${tileUrl} ${res.statusCode}`);
-        } else {
-          console.log(`${opts.method} ${tileUrl} ${res.statusCode} "${res.body}"`);
-        }
-      })
+    return retryingRequestTile(tileUrl, opts)
       .catch(err => {
-        console.error(`Error requesting ${tileUrl}: "${err.message}"`);
+        console.error(`Error requesting ${tileUrl}: "${err.message}", no more retries! Continuing ..`);
         return err;
       });
   })

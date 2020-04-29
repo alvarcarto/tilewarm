@@ -13,6 +13,8 @@ const defaultOpts = {
   headers: {},
   concurrency: 5,
   verbose: false,
+  maxRetries: 5,
+  retryBaseTimeout: 5000,
 };
 
 function getOpts(argv) {
@@ -70,8 +72,20 @@ function getUserOpts() {
       type: 'boolean'
     })
 
+    .option('max-retries', {
+      describe: 'How many times to retry the tile request. The first request is not counted as a retry.',
+      default: defaultOpts.maxRetries,
+      type: 'integer'
+    })
+
+    .option('retry-base-timeout', {
+      describe: 'Base timeout defines how many ms to wait before retrying a request. The final wait time is calculated with retryIndex * retryBaseTimeout.',
+      default: defaultOpts.retryBaseTimeout,
+      type: 'integer'
+    })
+
     .option('concurrency', {
-      describe: 'How  many concurrent requests to execute',
+      describe: 'How many concurrent requests to execute',
       default: defaultOpts.concurrency,
       type: 'integer'
     })
