@@ -9,6 +9,7 @@ const cliParser = require('./cli-parser');
 const { createTiles, buildUrl } = require('./tile');
 
 function requestTile(tileUrl, opts) {
+  const timeStart = (new Date()).getTime();
   return request({
     url: tileUrl,
     method: opts.method,
@@ -16,16 +17,18 @@ function requestTile(tileUrl, opts) {
     resolveWithFullResponse: true,
   })
     .then((res) => {
-      console.log(`${opts.method} ${tileUrl} ${res.statusCode}`);
+      const msTotal = (new Date()).getTime() - timeStart;
+      console.log(`${opts.method} ${tileUrl} ${res.statusCode} ${msTotal}ms`);
     })
     .catch((err) => {
-      if (err.name === 'StatusCodeError') {
+      const msTotal = (new Date()).getTime() - timeStart;
+      if (err.name === 'StatusCodeError' && err.response.statusCode >= 500) {
         const res = err.response;
-        console.log(`${opts.method} ${tileUrl} ${res.statusCode} "${res.body}"`);
+        console.log(`${opts.method} ${tileUrl} ${res.statusCode} ${msTotal}ms "${res.body}"`);
         throw err;
       }
 
-      console.log(`${opts.method} ${tileUrl} XXX "${err.message}"`);
+      console.log(`${opts.method} ${tileUrl} XXX ${msTotal}ms "${err.message}"`);
       throw err;
     });
 }
