@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const util = require('util');
 const BPromise = require('bluebird');
 const _ = require('lodash');
 const request = require('request-promise');
@@ -8,6 +9,23 @@ const promiseRetryify = require('promise-retryify');
 const cq = require('concurrent-queue')
 const cliParser = require('./cli-parser');
 const { createTiles, buildUrl } = require('./tile');
+
+function oneliner(str, maxLen = 200) {
+  let cut = str;
+  if (Buffer.isBuffer(cut)) {
+    cut = cut.toString('utf8');
+  } else if (!_.isString(cut)) {
+    cut = `[${Object.prototype.toString.call(cut)}]`;
+  }
+
+  cut = util.inspect(cut);
+
+  if (cut.length > maxLen) {
+    return `${cut.substring(0, maxLen)} ... (text cut)`;
+  }
+
+  return cut;
+}
 
 function makeLog(_opts = {}) {
   const opts = _.extend({
@@ -68,16 +86,22 @@ async function main(opts) {
 
   // Used to report average request times once in a while
   const stats = {
+    startTime: (new Date()).getTime(),
+    totalProcessedTiles: 0,
+    totalProcessTime: 0,
+    totalResponseTime: 0,
     totalRequests: 0,
-    totalTime: 0,
+
     // cleared after each z level
-    zoomRequests: 0,
-    zoomTime: 0,
+    zoomProcessedTiles: 0,
+    zoomProcessTime: 0,
+    zoomResponseTime: 0,
+    zoomRequests: 0
   };
 
-  function getAvgResponseTime(attrPrefix = 'zoom') {
-    const attrReq = `${attrPrefix}Requests`;
-    const attrTime = `${attrPrefix}Time`;
+  function getAvgProcessTime(attrPrefix = 'zoom') {
+    const attrReq = `${attrPrefix}ProcessedTiles`;
+    const attrTime = `${attrPrefix}ProcessTime`;
     if (stats[attrReq] === 0) {
       return 0;
     }
@@ -91,13 +115,16 @@ async function main(opts) {
     logInfo('\n\n');
     logInfo(`Requesting ${tileUrls.length} tiles for z${zoom} with concurrency ${concurrency} ..`);
 
+    stats.zoomProcessedTiles = 0;
+    stats.zoomProcessTime = 0;
+    stats.zoomResponseTime = 0;
     stats.zoomRequests = 0;
-    stats.zoomTime = 0;
 
     function reportProgress() {
-      const zoomProgress = `${stats.zoomRequests}/${tileUrls.length}`
-      const totalProgress = `${stats.totalRequests}/${totalTilesSum}`
-      logInfo(`${zoomProgress} for z${zoom} (${totalProgress} total), avg response time for z${zoom} ${getAvgResponseTime('zoom')}ms (${getAvgResponseTime('total')}ms total)`);
+      const zoomProgress = `${stats.zoomProcessedTiles}/${tileUrls.length}`
+      const totalProgress = `${stats.totalProcessedTiles}/${totalTilesSum}`
+      logInfo(`${zoomProgress} for z${zoom} (${totalProgress} total)`);
+      logInfo(`avg tile processing time per tile ${getAvgProcessTime('zoom')}ms at z${zoom} (${getAvgProcessTime('total')}ms for all zooms)`);
     }
 
     const retryingRequestTile = promiseRetryify(function requestTile(tileUrl, opts) {
@@ -107,29 +134,41 @@ async function main(opts) {
         url: tileUrl,
         method: opts.method,
         headers: opts.headers,
+        encoding: null,
         simple: false,
         resolveWithFullResponse: true,
       })
         .then((res) => {
-          const msTotal = (new Date()).getTime() - timeStart;
+          const msResponse = (new Date()).getTime() - timeStart;
           stats.totalRequests += 1;
-          stats.totalTime += msTotal;
+          stats.totalResponseTime += msResponse;
           stats.zoomRequests += 1;
-          stats.zoomTime += msTotal;
-          if (stats.zoomRequests > 0 && stats.zoomRequests % 100 === 0) {
-            reportProgress();
-          }
+          stats.zoomResponseTime += msResponse;
 
           const isOk = res.statusCode >= 200 && res.statusCode < 300;
           if (!isOk) {
-            logOut(`${opts.method} ${tileUrl} ${chalk.red(res.statusCode)} ${msTotal}ms "${res.body}"`);
-            throw new Error(`Received status ${res.statusCode}: ${res.body}`);
+            const msg = oneliner(res.body);
+            logOut(`${opts.method} ${tileUrl} ${chalk.red(res.statusCode)} ${msResponse}ms "${msg}"`);
+            const err = new Error(`Received status ${res.statusCode}: ${res.body}`);
+            err.skipLog = true;
+            throw err;
           }
 
-          logOut(`${opts.method} ${tileUrl} ${res.statusCode} ${msTotal}ms`);
+          return {
+            method: opts.method,
+            tileUrl,
+            bytes: res.body.byteLength,
+            statusCode: res.statusCode,
+            response: res,
+            msResponseTime: msResponse,
+          };
         })
         .catch((err) => {
-          logErr(`${opts.method} ${tileUrl} XXX "${err.message}"`);
+          if (!err.skipLog) {
+            const msg = oneliner(err.message);
+            logErr(`${opts.method} ${tileUrl} XXX "${msg}"`);
+          }
+
           throw err;
         })
     }, {
@@ -145,20 +184,38 @@ async function main(opts) {
     // n workers consuming a FIFO queue, doing requests as fast as they can
     const queueOpts = { concurrency };
     const queue = cq().limit(queueOpts).process((tileUrl) => {
+      const timeStart = (new Date()).getTime();
+
       return retryingRequestTile(tileUrl, opts)
         .catch(err => {
           logErr(`Error requesting ${tileUrl}: "${err.message}", no more retries! Continuing ..`);
           return err;
+        })
+        .then((metricsOrErr) => {
+          const msProcess = (new Date()).getTime() - timeStart;
+
+          if (_.isPlainObject(metricsOrErr)) {
+            const m = metricsOrErr;
+            logOut(`${m.method} ${m.tileUrl} ${m.statusCode} ${m.msResponseTime}ms (${msProcess}ms total) ${m.bytes}B`);
+          }
+
+          stats.totalProcessedTiles += 1;
+          stats.totalProcessTime += msProcess;
+          stats.zoomProcessedTiles += 1;
+          stats.zoomProcessTime += msProcess;
+          if (stats.zoomProcessedTiles > 0 && stats.zoomProcessedTiles % 100 === 0) {
+            reportProgress();
+          }
         });
     })
 
     const promises = _.map(tileUrls, tileUrl => queue(tileUrl));
     await BPromise.all(promises);
-    logInfo(`${stats.zoomRequests}/${stats.zoomRequests} for z${zoom} done, average response time for z${zoom} was ${getAvgResponseTime('zoom')}ms`);
+    logInfo(`${stats.zoomProcessedTiles}/${tileUrls.length} for z${zoom} done, average processing time for z${zoom} was ${getAvgProcessTime('zoom')}ms`);
   });
 
   logInfo('\n\n')
-  logInfo(`${stats.totalRequests}/${totalTilesSum} done, average response time was ${getAvgResponseTime('total')}ms`);
+  logInfo(`${stats.totalProcessedTiles}/${totalTilesSum} done, average processing time was ${getAvgProcessTime('total')}ms`);
 }
 
 if (require.main === module) {
