@@ -11,10 +11,10 @@ const defaultOpts = {
   input: null,
   method: 'GET',
   headers: {},
-  concurrency: 5,
+  concurrency: '5',
   verbose: false,
-  maxRetries: 5,
-  retryBaseTimeout: 5000,
+  maxRetries: '5',
+  retryBaseTimeout: '5000',
 };
 
 function getOpts(argv) {
@@ -73,21 +73,21 @@ function getUserOpts() {
     })
 
     .option('max-retries', {
-      describe: 'How many times to retry the tile request. The first request is not counted as a retry.',
+      describe: 'How many times to retry the tile request. The first request is not counted as a retry. Accepts integer or function that will get zoom as `z` parameter.',
       default: defaultOpts.maxRetries,
-      type: 'integer'
+      type: 'string'
     })
 
     .option('retry-base-timeout', {
-      describe: 'Base timeout defines how many ms to wait before retrying a request. The final wait time is calculated with retryIndex * retryBaseTimeout.',
+      describe: 'Base timeout defines how many ms to wait before retrying a request. The final wait time is calculated with retryIndex * retryBaseTimeout. Accepts integer or function that will get zoom as `z` parameter.',
       default: defaultOpts.retryBaseTimeout,
-      type: 'integer'
+      type: 'string'
     })
 
     .option('concurrency', {
-      describe: 'How many concurrent requests to execute',
+      describe: 'How many concurrent requests to execute. Accepts integer or function which gets zoom level as z parameter. For example "z < 8 ? 2 : z * 2"',
       default: defaultOpts.concurrency,
-      type: 'integer'
+      type: 'string'
     })
     .alias('c', 'concurrency')
 
@@ -113,7 +113,6 @@ function validateAndTransformOpts(opts) {
     throwArgumentError('When --point is set, --buffer must also be set');
   }
 
-  if (!/^\d+$/.test(opts.concurrency)) throwArgumentError('Invalid "concurrency" argument');
   if (!/^((\d+\-\d+)|(\d+(,\d+)*))$/.test(opts.zoom)) throwArgumentError('Invalid "zoom" argument');
   assertTemplateUrl(opts.url);
 
@@ -122,7 +121,23 @@ function validateAndTransformOpts(opts) {
     zoom: parseZoomRange(opts.zoom),
     point: parsePoint(opts.point),
     input: parseInput(opts.input),
+    concurrency: parseNumberOrZoomFunction(opts.concurrency),
+    maxRetries: parseNumberOrZoomFunction(opts.maxRetries),
+    retryBaseTimeout: parseNumberOrZoomFunction(opts.retryBaseTimeout),
   });
+}
+
+function parseNumberOrZoomFunction(val, message) {
+  let newVal;
+  const concurrencyIsNumber = /^\d+$/.test(val);
+  if (concurrencyIsNumber) {
+    const number = assertNumber(val, message);
+    newVal = (z) => number;
+  } else {
+    const func = new Function('z', `return ${val}`);
+    newVal = func;
+  }
+  return newVal;
 }
 
 function assertNumber(val, message) {
@@ -130,6 +145,7 @@ function assertNumber(val, message) {
   if (!_.isFinite(number)) {
     throwArgumentError(message);
   }
+  return number;
 }
 
 function throwArgumentError(message) {
