@@ -3,6 +3,7 @@
 const util = require('util');
 const BPromise = require('bluebird');
 const _ = require('lodash');
+const prettyMs = require('pretty-ms');
 const request = require('request-promise');
 const chalk = require('chalk');
 const promiseRetryify = require('promise-retryify');
@@ -109,9 +110,12 @@ async function main(opts) {
     return Number((stats[attrTime] / stats[attrReq]).toFixed(0))
   }
 
+  const avgConcurrency = _.meanBy(opts.zoom, zoom => opts.concurrency(zoom));
+
   await BPromise.each(tilesForLevels, async (level) => {
     const { zoom, tileUrls } = level;
     const concurrency = opts.concurrency(zoom);
+
     logInfo('\n\n');
     logInfo(`Requesting ${tileUrls.length} tiles for z${zoom} with concurrency ${concurrency} ..`);
 
@@ -121,10 +125,13 @@ async function main(opts) {
     stats.zoomRequests = 0;
 
     function reportProgress() {
-      const zoomProgress = `${stats.zoomProcessedTiles}/${tileUrls.length}`
-      const totalProgress = `${stats.totalProcessedTiles}/${totalTilesSum}`
+      const zoomProgress = `${stats.zoomProcessedTiles}/${tileUrls.length}`;
+      const totalProgress = `${stats.totalProcessedTiles}/${totalTilesSum}`;
+      const zoomTimeLeftMs = ((tileUrls.length - stats.zoomProcessedTiles) * getAvgProcessTime('zoom')) / concurrency;
+      const totalTimeLeftMs = ((totalTilesSum - stats.totalProcessedTiles) * getAvgProcessTime('total')) / avgConcurrency;
       logInfo(`${zoomProgress} for z${zoom} (${totalProgress} total)`);
       logInfo(`avg tile processing time per tile ${getAvgProcessTime('zoom')}ms at z${zoom} (${getAvgProcessTime('total')}ms for all zooms)`);
+      logInfo(`estimated time left for z${zoom} is ${prettyMs(zoomTimeLeftMs)} (${prettyMs(totalTimeLeftMs)} total)`);
     }
 
     const retryingRequestTile = promiseRetryify(function requestTile(tileUrl, opts) {
