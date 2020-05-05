@@ -41,6 +41,7 @@ async function main(opts) {
   logInfo('Calculating tiles ..')
   const tilesForLevels = _.map(opts.zoom, zoomLevel => {
     const tiles = createTiles(_.extend({}, opts, { zoom: [zoomLevel] }));
+    logInfo(`z${zoomLevel}: ${tiles.length} tiles`);
     return {
       zoom: zoomLevel,
       tileUrls: _.map(tiles, xyz => buildUrl(opts.url, xyz)),
@@ -48,7 +49,7 @@ async function main(opts) {
   });
 
   const totalTilesSum = _.sumBy(tilesForLevels, level => level.tileUrls.length);
-  logInfo(`Total of ${totalTilesSum} tile urls for zoom levels [${opts.zoom.join(', ')}]\n`);
+  logInfo(`Total of ${totalTilesSum} tile urls for all zoom levels\n`);
 
   if (totalTilesSum === 0) {
     logErr('No area to cover');
