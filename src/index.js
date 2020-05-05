@@ -133,7 +133,10 @@ async function main(opts) {
           throw err;
         })
     }, {
-      beforeRetry: retryCount => logInfo(`Retrying tile request (${retryCount}) ..`),
+      beforeRetry: (retryCount, args) => {
+        const tileUrl = args[0];
+        logInfo(`Retrying tile request ${tileUrl} (${retryCount}) ..`)
+      },
       retryTimeout: count => count * opts.retryBaseTimeout(zoom),
       maxRetries: opts.maxRetries(zoom),
     });

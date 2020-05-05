@@ -31,7 +31,7 @@
     "chalk": "^4.0.0",
     "concurrent-queue": "^7.0.2",
     "lodash": "^4.17.4",
-    "promise-retryify": "^0.5.0",
+    "promise-retryify": "^1.0.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
     "yargs": "^11.0.0"
