@@ -48,6 +48,8 @@ function makeLog(_opts = {}) {
 }
 
 async function main(opts) {
+  const mainProcessStartTime = (new Date()).getTime();
+
   const logOut = makeLog();
   const logInfo = makeLog({
     verbose: opts.verbose,
@@ -87,7 +89,6 @@ async function main(opts) {
 
   // Used to report average request times once in a while
   const stats = {
-    startTime: (new Date()).getTime(),
     totalProcessedTiles: 0,
     totalProcessTime: 0,
     totalResponseTime: 0,
@@ -113,6 +114,8 @@ async function main(opts) {
   const avgConcurrency = _.meanBy(opts.zoom, zoom => opts.concurrency(zoom));
 
   await BPromise.each(tilesForLevels, async (level) => {
+    const zoomProcessStartTime = (new Date()).getTime();
+
     const { zoom, tileUrls } = level;
     const concurrency = opts.concurrency(zoom);
 
@@ -131,7 +134,7 @@ async function main(opts) {
       const totalTimeLeftMs = ((totalTilesSum - stats.totalProcessedTiles) * getAvgProcessTime('total')) / avgConcurrency;
       logInfo(`${zoomProgress} for z${zoom} (${totalProgress} total)`);
       logInfo(`avg tile processing time per tile ${getAvgProcessTime('zoom')}ms at z${zoom} (${getAvgProcessTime('total')}ms for all zooms)`);
-      logInfo(`estimated time left for z${zoom} is ${prettyMs(zoomTimeLeftMs)} (${prettyMs(totalTimeLeftMs)} total)`);
+      logInfo(`estimated time left for z${zoom} is ${prettyMs(zoomTimeLeftMs)} with concurrency ${concurrency} (${prettyMs(totalTimeLeftMs)} total)`);
     }
 
     const retryingRequestTile = promiseRetryify(function requestTile(tileUrl, opts) {
@@ -218,11 +221,15 @@ async function main(opts) {
 
     const promises = _.map(tileUrls, tileUrl => queue(tileUrl));
     await BPromise.all(promises);
-    logInfo(`${stats.zoomProcessedTiles}/${tileUrls.length} for z${zoom} done, average processing time for z${zoom} was ${getAvgProcessTime('zoom')}ms`);
+    const zoomProcessMs = (new Date()).getTime() - zoomProcessStartTime;
+    logInfo(`${stats.zoomProcessedTiles}/${tileUrls.length} for z${zoom} done, average processing time per tile for z${zoom} was ${getAvgProcessTime('zoom')}ms`);
+    logInfo(`total processing time for z${zoom} was ${prettyMs(zoomProcessMs)}`);
   });
 
   logInfo('\n\n')
-  logInfo(`${stats.totalProcessedTiles}/${totalTilesSum} done, average processing time was ${getAvgProcessTime('total')}ms`);
+  logInfo(`${stats.totalProcessedTiles}/${totalTilesSum} done, average processing time per tile was ${getAvgProcessTime('total')}ms`);
+  const totalMainProcessMs = (new Date()).getTime() - mainProcessStartTime;
+  logInfo(`total processing time was ${prettyMs(totalMainProcessMs)}`);
 }
 
 if (require.main === module) {
