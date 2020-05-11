@@ -15,6 +15,8 @@ const defaultOpts = {
   verbose: false,
   maxRetries: '5',
   retryBaseTimeout: '5000',
+  // 10 min
+  requestTimeout: 10 * 60 * 1000,
 };
 
 function getOpts(argv) {
@@ -65,6 +67,12 @@ function getUserOpts() {
       type: 'string'
     })
     .alias('i', 'input')
+
+    .option('request-timeout', {
+      describe: 'Timeout for individual tile request in ms',
+      default: defaultOpts.requestTimeout,
+      type: 'integer'
+    })
 
     .option('verbose', {
       describe: 'Increase logging',

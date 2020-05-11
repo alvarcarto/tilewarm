@@ -142,12 +142,18 @@ async function main(opts) {
     const retryingRequestTile = promiseRetryify(function requestTile(tileUrl, opts) {
       const timeStart = (new Date()).getTime();
 
+      const timeout = _.isFinite(opts.requestTimeout) && opts.requestTimeout > 0
+        ? opts.requestTimeout
+        : undefined;
+
+      console.log('timeout', timeout)
       return request({
         url: tileUrl,
         method: opts.method,
         headers: opts.headers,
         encoding: null,
         simple: false,
+        timeout: timeout,
         resolveWithFullResponse: true,
       })
         .then((res) => {
