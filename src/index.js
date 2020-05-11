@@ -146,7 +146,6 @@ async function main(opts) {
         ? opts.requestTimeout
         : undefined;
 
-      console.log('timeout', timeout)
       return request({
         url: tileUrl,
         method: opts.method,
