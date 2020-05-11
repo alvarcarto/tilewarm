@@ -32,6 +32,7 @@ function makeLog(_opts = {}) {
   const opts = _.extend({
     verbose: true,
     color: a => a,
+    timestamp: false,
     pad: '',
     out: console.log
   }, _opts);
@@ -40,7 +41,8 @@ function makeLog(_opts = {}) {
     if (opts.verbose) {
       const newArgs = _.map(args, a => opts.color(a));
       if (_.isString(newArgs[0])) {
-        newArgs[0] = `${opts.pad}${newArgs[0]}`;
+        const timestamp = opts.timestamp ? `${(new Date()).toISOString()} ` : '';
+        newArgs[0] = `${opts.pad}${timestamp}${newArgs[0]}`;
       }
       opts.out.apply(this, newArgs);
     }
@@ -50,7 +52,7 @@ function makeLog(_opts = {}) {
 async function main(opts) {
   const mainProcessStartTime = (new Date()).getTime();
 
-  const logOut = makeLog();
+  const logOut = makeLog({ timestamp: true });
   const logInfo = makeLog({
     verbose: opts.verbose,
     color: chalk.bold,
